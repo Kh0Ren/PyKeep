@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from pony.flask import Pony
 from pony import orm
 
@@ -16,21 +16,51 @@ db.bind(provider='sqlite', filename='database.sqlite', create_db=True)
 db.generate_mapping(create_tables=True)
 
 with orm.db_session:
-    # Keeps(keep='Buy vodka and cigarettes')
     Keeps.select().show()
 
 
-@app.route('/keeps')
-def return_keeps():
-    keeps_list = orm.select(k for k in Keeps)
-    for i in keeps_list:
-        return i.keep
+@app.route('/keeps', methods=['GET', 'POST'])
+def request_keeps():
+    if request.method == 'GET':
+        try:
+            keeps_list = orm.select(k for k in Keeps)
+            dict = {}
+            for i in keeps_list:
+                dict[i.id] = i.keep
+            return dict, 200
+        except Exception:
+            return 'Error'
+
+    if request.method == 'POST':
+        try:
+            print(request.args['keep'])
+            Keeps(keep=request.args['keep'])
+            return 'Ok'
+        except Exception:
+            return 'Error'
 
 
-@app.route('/keeps/<int:id>')
-def return_keep(id):
-    k = Keeps.get(id=id)
-    return k.keep
+@app.route('/keeps/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def request_keep(id):
+    if request.method == 'GET':
+        try:
+            k = Keeps.get(id=id)
+            return k.keep
+        except Exception:
+            return 'Error 404'
+    if request.method == 'PUT':
+        try:
+            k = Keeps.get(id=id)
+            k.keep = request.args['keep']
+            return 'Ok'
+        except Exception:
+            return 'Error 404'
+    if request.method == 'DELETE':
+        try:
+            Keeps[id].delete()
+            return 'Ok'
+        except Exception:
+            return 'Error 404'
 
 
 app.run()
