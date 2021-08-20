@@ -28,7 +28,6 @@ def createparser():
 
 parser = createparser()
 namespace = parser.parse_args(sys.argv[1:])
-print(namespace.server)
 
 if namespace.server:
 
