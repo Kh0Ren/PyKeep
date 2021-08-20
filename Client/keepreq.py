@@ -10,17 +10,17 @@ def createparser():
     subpars = par.add_subparsers(dest='command', help='commands for interacting with keeps')
 
     viewpar = subpars.add_parser('view', help='View keep or keeps', description='View keep or keeps')
-    viewpar.add_argument('--keep', type=int, help='view the keep by id')
+    viewpar.add_argument('--id', type=int, help='view the keep by id')
     viewpar.add_argument('--keeps', action='store_const', const=1, help='view all keeps')
 
     addpar = subpars.add_parser('add', help='add keep', description='add keep')
     addpar.add_argument('--keep', help='new keep')
 
     delpar = subpars.add_parser('delete', help='delete keep', description='delete keep')
-    delpar.add_argument('--keep', type=int, help='keep\'s id')
+    delpar.add_argument('--id', type=int, help='keep\'s id')
 
     changepar = subpars.add_parser('change', help='change keep', description='change keep')
-    changepar.add_argument('--keep', type=int, help='keep\'s id')
+    changepar.add_argument('--id', type=int, help='keep\'s id')
     changepar.add_argument('--note', help='new text of keep')
 
     return par
@@ -36,8 +36,8 @@ if namespace.server:
             r = requests.get('{}/keeps'.format(namespace.server))
             print(r.text)
 
-        elif namespace.keep:
-            r = requests.get('{}/keeps/{}'.format(namespace.server, namespace.keep))
+        elif namespace.id:
+            r = requests.get('{}/keeps/{}'.format(namespace.server, namespace.id))
             print(r.text)
 
         else:
@@ -52,16 +52,16 @@ if namespace.server:
             print('Enter add -h to see the arguments')
 
     elif namespace.command == 'delete':
-        if namespace.keep:
-            r = requests.delete('{}/keeps/{}'.format(namespace.server, namespace.keep))
+        if namespace.id:
+            r = requests.delete('{}/keeps/{}'.format(namespace.server, namespace.id))
             print(r.text)
 
         else:
             print('Enter delete -h to see the arguments')
 
     elif namespace.command == 'change':
-        if namespace.keep and namespace.note:
-            r = requests.put('{}/keeps/{}?keep={}'.format(namespace.server, namespace.keep, namespace.note))
+        if namespace.id and namespace.note:
+            r = requests.put('{}/keeps/{}?keep={}'.format(namespace.server, namespace.id, namespace.note))
             print(r.text)
 
         else:
