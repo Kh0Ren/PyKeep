@@ -40,6 +40,9 @@ if namespace.server:
             r = requests.get('{}/keeps/{}'.format(namespace.server, namespace.id))
             print(r.text)
 
+        elif namespace.id and namespace.keeps:
+            print('Error: use only one of this arguments')
+
         else:
             print('Enter view -h to see the arguments')
 
