@@ -1,42 +1,74 @@
 import sys
 import argparse
 import requests
-import json
 
 
 def createparser():
     par = argparse.ArgumentParser()
-    par.add_argument('-s', '--server', required=True)
+    par.add_argument('-s', '--server')
+
     subpars = par.add_subparsers(dest='command')
-    compar = subpars.add_parser('command')
-    compar.add_argument('--keep', type=int)
-    compar.add_argument('--keeps', action='store_const', const=1)
-    compar.add_argument('--add')
-    compar.add_argument('--change', type=int)
-    compar.add_argument('--delete', type=int)
+
+    viewpar = subpars.add_parser('view')
+    viewpar.add_argument('--keep', type=int)
+    viewpar.add_argument('--keeps', action='store_const', const=1)
+
+    addpar = subpars.add_parser('add')
+    addpar.add_argument('--keep')
+
+    delpar = subpars.add_parser('delete')
+    delpar.add_argument('--keep', type=int)
+
+    changepar = subpars.add_parser('change')
+    changepar.add_argument('--keep', type=int)
+    changepar.add_argument('--note')
 
     return par
 
 
 parser = createparser()
 namespace = parser.parse_args(sys.argv[1:])
+print(namespace.server)
 
 if namespace.server:
-    if namespace.command == 'command':
-        if namespace.keep:
-            r = requests.get('{}/keeps/{}'.format(namespace.server, namespace.keep))
-            print(r.text)
 
+    if namespace.command == 'view':
         if namespace.keeps:
             r = requests.get('{}/keeps'.format(namespace.server))
             print(r.text)
+        else:
+            print('Error: required argument --keeps')
 
-        if namespace.add:
-            r = requests.post('{}/keeps?keep={}'.format(namespace.server, namespace.add))
+        if namespace.keep:
+            r = requests.get('{}/keeps/{}'.format(namespace.server, namespace.keep))
             print(r.text)
+        else:
+            print('Error: required argument --keep')
 
-        if namespace.delete:
-            r = requests.delete('{}/keeps/{}'.format(namespace.server, namespace.delete))
+    if namespace.command == 'add':
+        if namespace.keep:
+            r = requests.post('{}/keeps?keep={}'.format(namespace.server, namespace.keep))
             print(r.text)
+        else:
+            print('Error: required argument --keep')
+
+    if namespace.command == 'delete':
+        if namespace.keep:
+            r = requests.delete('{}/keeps/{}'.format(namespace.server, namespace.keep))
+            print(r.text)
+        else:
+            print('Error: required argument --keep')
+
+    if namespace.command == 'change':
+        if namespace.keep and namespace.note:
+            r = requests.put('{}/keeps/{}?keep={}'.format(namespace.server, namespace.keep, namespace.note))
+            print(r.text)
+        else:
+            print('Error: required all arguments of command change')
+
+    else:
+        print('Error: enter command')
 
 
+else:
+    print('Error: required argument -s/--server')

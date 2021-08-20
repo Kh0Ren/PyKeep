@@ -47,7 +47,10 @@ def request_keeps():
 
     if request.method == 'POST':
         try:
-            k = Keeps(keep=request.args['keep'])
+            with orm.db_session:
+                k = Keeps(keep=request.args['keep'])
+                db.commit()
+
             return {"id": k.id, "keep": k.keep}, 200
         except Exception as error:
             return {
@@ -61,7 +64,7 @@ def request_keep(keep_id):
     if request.method == 'GET':
         try:
             k = Keeps[keep_id]
-            return {k.id: k.keep}, 200
+            return {"id": k.id, "keep": k.keep}, 200
         except Exception as error:
             return {
                        "status": "error",
@@ -69,7 +72,7 @@ def request_keep(keep_id):
                    }, 500
     if request.method == 'PUT':
         try:
-            k = Keeps.get(id=id)
+            k = Keeps[keep_id]
             k.keep = request.args['keep']
             return {"status": "OK", "message": "updated"}, 200
         except Exception as error:
@@ -79,7 +82,7 @@ def request_keep(keep_id):
                    }, 500
     if request.method == 'DELETE':
         try:
-            Keeps[id].delete()
+            Keeps[keep_id].delete()
             return {"status": "OK", "message": "deleted"}, 200
         except Exception as error:
             return {
