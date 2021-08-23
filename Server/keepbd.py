@@ -12,46 +12,104 @@ db = orm.Database()
 
 
 # Определяю сущность БД и ее атрибуты
-class Keeps(db.Entity):
-    # Первичный ключ
+class Note(db.Entity):
     id = orm.PrimaryKey(int, auto=True)
-    # Заметка пользователя
-    keep = orm.Required(str)
+    text = orm.Optional(str)
+    category = orm.Required('Category')
+
+
+class Category(db.Entity):
+    id = orm.PrimaryKey(int, auto=True)
+    name = orm.Optional(str, unique=True)
+    notes = orm.Set(Note)
 
 
 # Привязываю объявленную сущность к БД
 db.bind(provider='sqlite', filename='database.sqlite', create_db=True)
-# создаю таблицу БД, где будут храниться атрибуты сущности Keeps
+# создаю таблицу БД, где будут храниться атрибуты сущности Notes
 db.generate_mapping(create_tables=True)
+
+
+@app.route('/categories', methods=['GET', 'POST'])
+def request_category():
+    if request.method == 'GET':
+        try:
+            cat_list = orm.select(c for c in Category)
+            categories = {
+                "data": []
+                }
+            for i in cat_list:
+                categories["data"].append({"id": i.id, "name": i.name})
+            return categories, 200
+        except Exception as error:
+            return {
+                       "status": "error",
+                       "message": str(error)
+                   }, 500
+
+    if request.method == 'POST':
+        try:
+            c = Category(name=request.args['name'])
+            db.commit()
+            return {"id": c.id, "name": c.name}, 200
+        except Exception as error:
+            return {
+                   "status": "error",
+                   "message": str(error)
+               }, 500
+
 
 
 # Создаю функцию, которая будет работать со списком заметок
 # И привязываю ее к URL-адресу
 # Объявляю HTTP-методы,
-@app.route('/keeps', methods=['GET', 'POST'])
-def request_keeps():
+@app.route('/categories/<category>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def request_notes(category):
     if request.method == 'GET':
         try:
-            keeps_list = orm.select(k for k in Keeps)
-            keeps = {
+            notes_list = orm.select(n for n in Note if n.category.name == category)
+            notes = {
                 "data": []
             }
-            for i in keeps_list:
-                keeps["data"].append({"id": i.id, "keep": i.keep})
-            return keeps, 200
+            for i in notes_list:
+                notes["data"].append({"id": i.id, "text": i.text})
+            return notes, 200
         except Exception as error:
             return {
-                "status": "error",
-                "message": str(error)
-            }, 500
+                       "status": "error",
+                       "message": str(error)
+                   }, 500
 
     if request.method == 'POST':
         try:
-            with orm.db_session:
-                k = Keeps(keep=request.args['keep'])
-                db.commit()
+            c = Category.get(name=category)
+            n = Note(text=request.args['text'], category=c.id)
 
-            return {"id": k.id, "keep": k.keep}, 200
+            db.commit()
+
+            return {"id": n.id, "text": n.text}, 200
+        except Exception as error:
+            return {
+                       "status": "error",
+                       "message": str(error)
+                   }, 500
+
+    if request.method == 'PUT':
+        try:
+            c = Category.get(name=category)
+            c.name = request.args['name']
+            return {"status": "OK", "message": "updated"}, 200
+        except Exception as error:
+            return {
+                       "status": "error",
+                       "message": str(error)
+                   }, 500
+
+    if request.method == 'DELETE':
+        try:
+            c = Category.get(name=category)
+            c.delete()
+            return {"status": "OK", "message": "deleted"}, 200
         except Exception as error:
             return {
                        "status": "error",
@@ -59,12 +117,13 @@ def request_keeps():
                    }, 500
 
 
-@app.route('/keeps/<int:keep_id>', methods=['GET', 'PUT', 'DELETE'])
-def request_keep(keep_id):
+@app.route('/categories/<category>/<int:note_id>', methods=['GET', 'PUT', 'DELETE'])
+def request_note(category, note_id):
     if request.method == 'GET':
         try:
-            k = Keeps[keep_id]
-            return {"id": k.id, "keep": k.keep}, 200
+            c = Category.get(name=category)
+            n = Note.get(id=note_id, category=c.id)
+            return {"id": n.id, "text": n.text}, 200
         except Exception as error:
             return {
                        "status": "error",
@@ -72,8 +131,9 @@ def request_keep(keep_id):
                    }, 500
     if request.method == 'PUT':
         try:
-            k = Keeps[keep_id]
-            k.keep = request.args['keep']
+            c = Category.get(name=category)
+            n = Note.get(id=note_id, category=c.id)
+            n.text = request.args['text']
             return {"status": "OK", "message": "updated"}, 200
         except Exception as error:
             return {
@@ -82,7 +142,9 @@ def request_keep(keep_id):
                    }, 500
     if request.method == 'DELETE':
         try:
-            Keeps[keep_id].delete()
+            c = Category.get(name=category)
+            n = Note.get(id=note_id, category=c.id)
+            n.delete()
             return {"status": "OK", "message": "deleted"}, 200
         except Exception as error:
             return {
