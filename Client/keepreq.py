@@ -3,6 +3,37 @@ import argparse
 import requests
 
 
+class NoteServerClient:
+    def __init__(self, server):
+        self.server = server
+
+    def view_categories(self):
+        pass
+
+    def view_notes(self, catname):
+        pass
+
+    def view_note(self, catname, noteid):
+        pass
+
+    def add_category(self, name):
+        pass
+
+    def add_note(self, text, catname):
+        pass
+
+    def delete_category(self, name):
+        pass
+
+    def delete_note(self, catname, noteid):
+        pass
+
+    def change_category(self, name, newname):
+        pass
+
+    def change_note(self, catname, noteid, text):
+        pass
+
 def createparser():
     par = argparse.ArgumentParser()
     par.add_argument('-s', '--server', help='server\'s URL')
