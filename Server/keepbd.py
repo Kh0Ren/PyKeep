@@ -54,10 +54,9 @@ def request_category():
             return {"id": c.id, "name": c.name}, 200
         except Exception as error:
             return {
-                   "status": "error",
-                   "message": str(error)
-               }, 500
-
+                       "status": "error",
+                       "message": str(error)
+                   }, 500
 
 
 # Создаю функцию, которая будет работать со списком заметок

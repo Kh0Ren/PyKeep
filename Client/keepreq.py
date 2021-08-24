@@ -34,90 +34,92 @@ def createparser():
     changecatpar.add_argument('--newname', help='New name of category')
 
     changenotepar = subpars.add_parser('changenote', help='Change text of note',
-                                      description='Change text of note')
+                                       description='Change text of note')
     changenotepar.add_argument('--catname', help='Name of category')
     changenotepar.add_argument('--noteid', help='Note\'s id')
     changenotepar.add_argument('--text', help='New text of note. Used with --noteid and --catname')
 
-
     return par
 
 
-parser = createparser()
-namespace = parser.parse_args(sys.argv[1:])
+if __name__ == '__main__':
+    parser = createparser()
+    namespace = parser.parse_args(sys.argv[1:])
 
-if namespace.server:
+    if namespace.server:
 
-    if namespace.command == 'view':
-        if namespace.categories and namespace.category is None:
-            r = requests.get('{}/categories'.format(namespace.server))
-            print(r.text)
+        if namespace.command == 'view':
+            if namespace.categories and namespace.category is None:
+                r = requests.get('{}/categories'.format(namespace.server))
+                print(r.text)
 
-        elif namespace.category and namespace.categories is None:
-            if namespace.noteid:
-                r = requests.get('{}/categories/{}/{}'.format(namespace.server, namespace.category, namespace.noteid))
+            elif namespace.category and namespace.categories is None:
+                if namespace.noteid:
+                    r = requests.get('{}/categories/{}/{}'.format(namespace.server,
+                                                                  namespace.category, namespace.noteid))
+                    print(r.text)
+                else:
+                    r = requests.get('{}/categories/{}'.format(namespace.server, namespace.category))
+                    print(r.text)
+
+            elif namespace.categories is not None and namespace.category is not None:
+                print('Error: use only one of this arguments')
+
+            else:
+                print('Enter view -h to see the arguments')
+
+        elif namespace.command == 'addcat':
+            if namespace.category:
+                r = requests.post('{}/categories?name={}'.format(namespace.server, namespace.category))
                 print(r.text)
             else:
-                r = requests.get('{}/categories/{}'.format(namespace.server, namespace.category))
+                print('Enter add -h to see the arguments')
+
+        elif namespace.command == 'addnote':
+            if namespace.note and namespace.catname:
+                r = requests.post('{}/categories/{}?text={}'.format(namespace.server,
+                                                                    namespace.catname, namespace.note))
                 print(r.text)
+            else:
+                print('Error: argument --note must be used with --category')
 
-        elif namespace.categories is not None and namespace.category is not None:
-            print('Error: use only one of this arguments')
+        elif namespace.command == 'delcat':
+            if namespace.name:
+                r = requests.delete('{}/categories/{}'.format(namespace.server, namespace.name))
+                print(r.text)
+            else:
+                print('Enter delete -h to see the arguments')
 
-        else:
-            print('Enter view -h to see the arguments')
+        elif namespace.command == 'delnote':
+            if namespace.noteid and namespace.catname:
+                r = requests.delete('{}/categories/{}/{}'.format(namespace.server,
+                                                                 namespace.catname, namespace.noteid))
+                print(r.text)
+            else:
+                print('Error: arguments --noteid and --catname required to delete the note.'
+                      ' Enter -h for help')
 
-    elif namespace.command == 'addcat':
-        if namespace.category:
-            r = requests.post('{}/categories?name={}'.format(namespace.server, namespace.category))
-            print(r.text)
+        elif namespace.command == 'changecat':
+            if namespace.name and namespace.newname:
+                r = requests.put('{}/categories/{}?name={}'.format(namespace.server,
+                                                                   namespace.name, namespace.newname))
+                print(r.text)
+            else:
+                print('Error: arguments --name and --newname required to change the name of category.'
+                      ' Enter -h for help')
 
-        else:
-            print('Enter add -h to see the arguments')
-
-    elif namespace.command == 'addnote':
-        if namespace.note and namespace.catname:
-            r = requests.post('{}/categories/{}?text={}'.format(namespace.server, namespace.catname, namespace.note))
-            print(r.text)
-        else:
-            print('Error: argument --note must be used with --category')
-
-    elif namespace.command == 'delcat':
-        if namespace.name:
-            r = requests.delete('{}/categories/{}'.format(namespace.server, namespace.name))
-            print(r.text)
-
-        else:
-            print('Enter delete -h to see the arguments')
-
-    elif namespace.command == 'delnote':
-        if namespace.noteid and namespace.catname:
-            r = requests.delete('{}/categories/{}/{}'.format(namespace.server, namespace.catname, namespace.noteid))
-            print(r.text)
-        else:
-            print('Error: arguments --noteid and --catname required to delete the note. Enter -h for help')
-
-    elif namespace.command == 'changecat':
-        if namespace.name and namespace.newname:
-            r = requests.put('{}/categories/{}?name={}'.format(namespace.server, namespace.name, namespace.newname))
-            print(r.text)
+        elif namespace.command == 'changenote':
+            if namespace.catname and namespace.noteid and namespace.text:
+                r = requests.put('{}/categories/{}/{}?text={}'.format(namespace.server,
+                                                                      namespace.catname, namespace.noteid,
+                                                                      namespace.text))
+                print(r.text)
+            else:
+                print('Error: arguments --catname, --noteid and --text'
+                      ' required to change the text of note')
 
         else:
-            print('Error: arguments --name and --newname required to change the name of category.'
-                  ' Enter -h for help')
-
-    elif namespace.command == 'changenote':
-        if namespace.catname and namespace.noteid and namespace.text:
-            r = requests.put('{}/categories/{}/{}?text={}'.format(namespace.server,
-                                                                  namespace.catname, namespace.noteid,
-                                                                  namespace.text))
-            print(r.text)
-        else:
-            print('Error: arguments --catname, --noteid and --text required to change the text of note')
+            parser.print_help()
 
     else:
         parser.print_help()
-
-
-else:
-    parser.print_help()
