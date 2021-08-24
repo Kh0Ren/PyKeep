@@ -42,9 +42,9 @@ def createparser():
     return par
 
 
-if __name__ == '__main__':
+def work_parse(argv):
     parser = createparser()
-    namespace = parser.parse_args(sys.argv[1:])
+    namespace = parser.parse_args(argv)
 
     if namespace.server:
 
@@ -52,61 +52,77 @@ if __name__ == '__main__':
             if namespace.categories and namespace.category is None:
                 r = requests.get('{}/categories'.format(namespace.server))
                 print(r.text)
+                return True
 
             elif namespace.category and namespace.categories is None:
                 if namespace.noteid:
                     r = requests.get('{}/categories/{}/{}'.format(namespace.server,
                                                                   namespace.category, namespace.noteid))
                     print(r.text)
+                    return True
+
                 else:
                     r = requests.get('{}/categories/{}'.format(namespace.server, namespace.category))
                     print(r.text)
+                    return True
 
             elif namespace.categories is not None and namespace.category is not None:
                 print('Error: use only one of this arguments')
+                return False
 
             else:
                 print('Enter view -h to see the arguments')
+                return False
 
         elif namespace.command == 'addcat':
             if namespace.category:
                 r = requests.post('{}/categories?name={}'.format(namespace.server, namespace.category))
                 print(r.text)
+                return True
             else:
                 print('Enter add -h to see the arguments')
+                return False
 
         elif namespace.command == 'addnote':
             if namespace.note and namespace.catname:
                 r = requests.post('{}/categories/{}?text={}'.format(namespace.server,
                                                                     namespace.catname, namespace.note))
                 print(r.text)
+                return True
             else:
                 print('Error: argument --note must be used with --category')
+                return False
 
         elif namespace.command == 'delcat':
             if namespace.name:
                 r = requests.delete('{}/categories/{}'.format(namespace.server, namespace.name))
                 print(r.text)
+                return True
             else:
                 print('Enter delete -h to see the arguments')
+                return False
 
         elif namespace.command == 'delnote':
             if namespace.noteid and namespace.catname:
                 r = requests.delete('{}/categories/{}/{}'.format(namespace.server,
                                                                  namespace.catname, namespace.noteid))
                 print(r.text)
+                return True
             else:
                 print('Error: arguments --noteid and --catname required to delete the note.'
                       ' Enter -h for help')
+                return False
 
         elif namespace.command == 'changecat':
             if namespace.name and namespace.newname:
                 r = requests.put('{}/categories/{}?name={}'.format(namespace.server,
                                                                    namespace.name, namespace.newname))
                 print(r.text)
+                return True
             else:
                 print('Error: arguments --name and --newname required to change the name of category.'
                       ' Enter -h for help')
+                return False
 
         elif namespace.command == 'changenote':
             if namespace.catname and namespace.noteid and namespace.text:
@@ -114,12 +130,21 @@ if __name__ == '__main__':
                                                                       namespace.catname, namespace.noteid,
                                                                       namespace.text))
                 print(r.text)
+                return True
             else:
                 print('Error: arguments --catname, --noteid and --text'
                       ' required to change the text of note')
+                return False
 
         else:
             parser.print_help()
+            return False
 
     else:
         parser.print_help()
+        return False
+
+
+if __name__ == '__main__':
+    t = work_parse(sys.argv[1:])
+    print(t)
