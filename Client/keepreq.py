@@ -9,50 +9,47 @@ class NoteServerClient:
 
     def view_categories(self):
         r = requests.get('{}/categories'.format(self.server))
-        #categories = r.json()
-        #type(categories)
-        #if len(categories) > 1:
-        return r.json()
-        #else:
-        #    pass
+        return r.json(), r.status_code
+
 
     def view_notes(self, catname):
         r = requests.get('{}/categories/{}'.format(self.server, catname))
-        return r.json()
+        return r.json(), r.status_code
+
 
     def view_note(self, catname, noteid):
         r = requests.get('{}/categories/{}/{}'.format(self.server,
                                                       catname, noteid))
-        return r.json()
+        return r.json(), r.status_code
 
     def add_category(self, name):
         r = requests.post('{}/categories?name={}'.format(self.server, name))
-        return r.json()
+        return r.json(), r.status_code
 
     def add_note(self, catname, text):
         r = requests.post('{}/categories/{}?text={}'.format(self.server,
                                                             catname, text))
-        return r.json()
+        return r.json(), r.status_code
 
     def delete_category(self, name):
         r = requests.delete('{}/categories/{}'.format(self.server, name))
-        return r.json()
+        return r.json(), r.status_code
 
     def delete_note(self, catname, noteid):
         r = requests.delete('{}/categories/{}/{}'.format(self.server,
                                                          catname, noteid))
-        return r.json()
+        return r.json(), r.status_code
 
     def change_category(self, name, newname):
         r = requests.put('{}/categories/{}?name={}'.format(self.server,
                                                            name, newname))
-        return r.json
+        return r.json, r.status_code
 
     def change_note(self, catname, noteid, text):
         r = requests.put('{}/categories/{}/{}?text={}'.format(self.server,
                                                               catname, noteid,
                                                               text))
-        return r.json()
+        return r.json(), r.status_code
 
 
 def createparser():
@@ -103,35 +100,45 @@ def work_parse(argv):
 
         if namespace.command == 'view':
             if namespace.categories and namespace.category is None:
-                categories = nsc.view_categories()
+                categories, res_code = nsc.view_categories()
                 data = categories['data']
-                if len(data) > 0:
-                    print('Categories:')
-                    for item in data:
-                        print('{} : {}'.format(item['id'], item['name']))
-                else:
-                    print('There is no categories.')
+                if res_code == 200:
+                    if len(data) > 0:
+                        print('Categories:')
+                        for item in data:
+                            print('{} : {}'.format(item['id'], item['name']))
+                    else:
+                        print('There is no categories.')
 
-                return True
+                else:
+                    print(categories['message'], categories['status'])
+
+                    return True
 
             elif namespace.category and namespace.categories is None:
                 if namespace.noteid:
-                    note = nsc.view_note(namespace.category, namespace.noteid)
-                    if 'id' and 'text' in note:
-                        print('Note {} : {}'.format(note['id'], note['text']))
+                    note, res_code = nsc.view_note(namespace.category, namespace.noteid)
+                    if res_code == 200:
+                        if 'id' and 'text' in note:
+                            print('Note {} : {}'.format(note['id'], note['text']))
 
+                        else:
+                            print('There is no such note')
                     else:
-                        print('There is no such note')
+                        print(note['message'], note['status'])
                     return True
                 else:
-                    notes = nsc.view_notes(namespace.category)
-                    data = notes['data']
-                    if len(data) > 0:
-                        print('Notes:')
-                        for item in data:
-                            print('{} : {}'.format(item['id'], item['text']))
+                    notes, res_code = nsc.view_notes(namespace.category)
+                    if res_code == 200:
+                        data = notes['data']
+                        if len(data) > 0:
+                            print('Notes:')
+                            for item in data:
+                                print('{} : {}'.format(item['id'], item['text']))
+                        else:
+                            print('There is no notes in category "{}"'.format(namespace.category))
                     else:
-                        print('There is no notes in category "{}"'.format(namespace.category))
+                        print(notes['message'], notes['status'])
                     return True
 
             elif namespace.categories is not None and namespace.category is not None:
@@ -144,8 +151,11 @@ def work_parse(argv):
 
         elif namespace.command == 'addcat':
             if namespace.category:
-                category = nsc.add_category(namespace.category)
-                print('Added category:\n{} : {}'.format(category['id'], category['name']))
+                category, res_code = nsc.add_category(namespace.category)
+                if res_code == 200:
+                    print('Added category:\n{} : {}'.format(category['id'], category['name']))
+                else:
+                    print(category['message'], category['status'])
                 return True
             else:
                 print('Enter addcat -h to see the arguments')
@@ -153,8 +163,9 @@ def work_parse(argv):
 
         elif namespace.command == 'addnote':
             if namespace.note and namespace.catname:
-                note = nsc.add_note(namespace.catname, namespace.note)
-                print('Added note:\n{} : {}'.format(note['id'], note['text']))
+                note, res_code = nsc.add_note(namespace.catname, namespace.note)
+                if res_code == 200:
+                    print('Added note:\n{} : {}'.format(note['id'], note['text']))
                 return True
             elif namespace.note or namespace.catname:
                 print('Error: arguments --note and --category required to delete the note.'
@@ -166,8 +177,11 @@ def work_parse(argv):
 
         elif namespace.command == 'delcat':
             if namespace.name:
-                category = nsc.delete_category(namespace.name)
-                print('Category "{}" and it\'s notes deleted successfully'.format(namespace.name))
+                category, res_code = nsc.delete_category(namespace.name)
+                if res_code == 200:
+                    print('Category "{}" and it\'s notes deleted successfully'.format(namespace.name))
+                else:
+                    print(category['message'], category['status'])
                 return True
             else:
                 print('Enter delcat -h to see the arguments')
@@ -175,8 +189,11 @@ def work_parse(argv):
 
         elif namespace.command == 'delnote':
             if namespace.noteid and namespace.catname:
-                note = nsc.delete_note(namespace.catname, namespace.noteid)
-                print('Note deleted successfully')
+                note, res_code = nsc.delete_note(namespace.catname, namespace.noteid)
+                if res_code == 200:
+                    print('Note deleted successfully')
+                else:
+                    print(note['message'], note['status'])
                 return True
             elif namespace.noteid or namespace.catname:
                 print('Error: arguments --noteid and --catname required to delete the note.'
@@ -188,8 +205,11 @@ def work_parse(argv):
 
         elif namespace.command == 'changecat':
             if namespace.name and namespace.newname:
-                category = nsc.change_category(namespace.name, namespace.newname)
-                print('Category "{}" renamed to "{}"'.format(namespace.name, namespace.newname))
+                category, res_code = nsc.change_category(namespace.name, namespace.newname)
+                if res_code == 200:
+                    print('Category "{}" renamed to "{}"'.format(namespace.name, namespace.newname))
+                else:
+                    print(category['message'], category['status'])
                 return True
             elif namespace.name or namespace.newname:
                 print('Error: arguments --name and --newname required to change the name of category.'
@@ -201,8 +221,11 @@ def work_parse(argv):
 
         elif namespace.command == 'changenote':
             if namespace.catname and namespace.noteid and namespace.text:
-                note = nsc.change_note(namespace.catname, namespace.noteid, namespace.text)
-                print('Note renamed successfully')
+                note, res_code = nsc.change_note(namespace.catname, namespace.noteid, namespace.text)
+                if res_code == 200:
+                    print('Note renamed successfully')
+                else:
+                    print(note['message'], note['status'])
                 return True
             elif namespace.catname or namespace.noteid or namespace.text:
                 print('Error: arguments --catname, --noteid and --text'
