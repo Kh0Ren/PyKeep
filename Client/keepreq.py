@@ -8,31 +8,47 @@ class NoteServerClient:
         self.server = server
 
     def view_categories(self):
-        pass
+        r = requests.get('{}/categories'.format(self.server))
+        return r.text
 
     def view_notes(self, catname):
-        pass
+        r = requests.get('{}/categories/{}'.format(self.server, catname))
+        return r.text
 
     def view_note(self, catname, noteid):
-        pass
+        r = requests.get('{}/categories/{}/{}'.format(self.server,
+                                                      catname, noteid))
+        return r.text
 
     def add_category(self, name):
-        pass
+        r = requests.post('{}/categories?name={}'.format(self.server, name))
+        return r.text
 
-    def add_note(self, text, catname):
-        pass
+    def add_note(self, catname, text):
+        r = requests.post('{}/categories/{}?text={}'.format(self.server,
+                                                            catname, text))
+        return r.text
 
     def delete_category(self, name):
-        pass
+        r = requests.delete('{}/categories/{}'.format(self.server, name))
+        return r.text
 
     def delete_note(self, catname, noteid):
-        pass
+        r = requests.delete('{}/categories/{}/{}'.format(self.server,
+                                                         catname, noteid))
+        return r.text
 
     def change_category(self, name, newname):
-        pass
+        r = requests.put('{}/categories/{}?name={}'.format(self.server,
+                                                           name, newname))
+        return r.text
 
     def change_note(self, catname, noteid, text):
-        pass
+        r = requests.put('{}/categories/{}/{}?text={}'.format(self.server,
+                                                              catname, noteid,
+                                                              text))
+        return r.text
+
 
 def createparser():
     par = argparse.ArgumentParser()
@@ -78,93 +94,92 @@ def work_parse(argv):
     namespace = parser.parse_args(argv)
 
     if namespace.server:
+        nsc = NoteServerClient(namespace.server)
 
         if namespace.command == 'view':
             if namespace.categories and namespace.category is None:
-                r = requests.get('{}/categories'.format(namespace.server))
-                print(r.text)
+                print(nsc.view_categories())
                 return True
 
             elif namespace.category and namespace.categories is None:
                 if namespace.noteid:
-                    r = requests.get('{}/categories/{}/{}'.format(namespace.server,
-                                                                  namespace.category, namespace.noteid))
-                    print(r.text)
+                    print(nsc.view_note(namespace.category, namespace.noteid))
                     return True
-
                 else:
-                    r = requests.get('{}/categories/{}'.format(namespace.server, namespace.category))
-                    print(r.text)
+                    print(nsc.view_notes(namespace.category))
                     return True
 
             elif namespace.categories is not None and namespace.category is not None:
-                print('Error: use only one of this arguments')
+                print('Error: use only one of this arguments.'
+                      'Enter view -h to see the arguments')
                 return False
-
             else:
                 print('Enter view -h to see the arguments')
                 return False
 
         elif namespace.command == 'addcat':
             if namespace.category:
-                r = requests.post('{}/categories?name={}'.format(namespace.server, namespace.category))
-                print(r.text)
+                print(nsc.add_category(namespace.category))
                 return True
             else:
-                print('Enter add -h to see the arguments')
+                print('Enter addcat -h to see the arguments')
                 return False
 
         elif namespace.command == 'addnote':
             if namespace.note and namespace.catname:
-                r = requests.post('{}/categories/{}?text={}'.format(namespace.server,
-                                                                    namespace.catname, namespace.note))
-                print(r.text)
+                print(nsc.add_note(namespace.catname, namespace.note))
                 return True
+            elif namespace.note or namespace.catname:
+                print('Error: arguments --note and --category required to delete the note.'
+                      'Enter addnote -h to see the arguments')
+                return False
             else:
-                print('Error: argument --note must be used with --category')
+                print('Enter addnote -h to see the arguments')
                 return False
 
         elif namespace.command == 'delcat':
             if namespace.name:
-                r = requests.delete('{}/categories/{}'.format(namespace.server, namespace.name))
-                print(r.text)
+                print(nsc.delete_category(namespace.name))
                 return True
             else:
-                print('Enter delete -h to see the arguments')
+                print('Enter delcat -h to see the arguments')
                 return False
 
         elif namespace.command == 'delnote':
             if namespace.noteid and namespace.catname:
-                r = requests.delete('{}/categories/{}/{}'.format(namespace.server,
-                                                                 namespace.catname, namespace.noteid))
-                print(r.text)
+                print(nsc.delete_note(namespace.catname, namespace.noteid))
                 return True
-            else:
+            elif namespace.noteid or namespace.catname:
                 print('Error: arguments --noteid and --catname required to delete the note.'
-                      ' Enter -h for help')
+                      ' Enter delnote -h for help')
+                return False
+            else:
+                print('Enter delnote -h for help')
                 return False
 
         elif namespace.command == 'changecat':
             if namespace.name and namespace.newname:
-                r = requests.put('{}/categories/{}?name={}'.format(namespace.server,
-                                                                   namespace.name, namespace.newname))
-                print(r.text)
+                print(nsc.change_category(namespace.name, namespace.newname))
                 return True
-            else:
+            elif namespace.name or namespace.newname:
                 print('Error: arguments --name and --newname required to change the name of category.'
-                      ' Enter -h for help')
+                      ' Enter changecat -h for help')
+                return False
+            else:
+                print('Enter changecat -h for help')
                 return False
 
         elif namespace.command == 'changenote':
             if namespace.catname and namespace.noteid and namespace.text:
-                r = requests.put('{}/categories/{}/{}?text={}'.format(namespace.server,
-                                                                      namespace.catname, namespace.noteid,
-                                                                      namespace.text))
-                print(r.text)
+                nsc.change_note(namespace.catname, namespace.noteid, namespace.text)
                 return True
-            else:
+            elif namespace.catname or namespace.noteid or namespace.text:
                 print('Error: arguments --catname, --noteid and --text'
-                      ' required to change the text of note')
+                      ' required to change the text of note.'
+                      'Enter changenote -h to see the arguments')
+                return False
+            else:
+                print('Enter changenote -h to see the arguments')
                 return False
 
         else:
